@@ -7,7 +7,9 @@ import traceback
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List
 
-from langchain_aws import BedrockChat
+from dotenv import load_dotenv
+
+from langchain_aws import ChatBedrock
 from langchain_core.messages import HumanMessage
 from langchain_openai import ChatOpenAI
 from langgraph.errors import GraphRecursionError
@@ -23,8 +25,8 @@ from agent import get_agent_graph
 max_retries = 5
 base_delay = 1
 
-MODEL = "openai"
-
+MODEL = "us.meta.llama3-2-1b-instruct-v1:0"
+# MODEL = "anthropic.claude-3-5-sonnet-20240620-v1:0"
 
 def retry_with_exponential_backoff(func, *args, **kwargs):
     for attempt in range(max_retries):
@@ -39,26 +41,15 @@ def retry_with_exponential_backoff(func, *args, **kwargs):
 
 def get_llm_response(system_prompt: str, human_prompt: str) -> str:
     try:
-        if MODEL == "claude":
-            client = BedrockChat(
-                credentials_profile_name="default",
-                model_id="anthropic.claude-3-5-sonnet-20240620-v1:0",
-                region_name="us-west-2",
-                model_kwargs={"temperature": 0},
-            )
-            response = retry_with_exponential_backoff(
-                client.invoke, [("system", system_prompt), ("human", human_prompt)]
-            )
-        else:
-            client = ChatOpenAI(
-                model="o1-mini",
-                temperature=1,
-                max_completion_tokens=4096,
-                api_key="<API-KEY>",
-            )
-            response = retry_with_exponential_backoff(
-                client.invoke, [("human", human_prompt)]
-            )
+        client = ChatBedrock(
+            credentials_profile_name="default",
+            model_id=MODEL,
+            region_name="us-west-2",
+            model_kwargs={"temperature": 0},
+        )
+        response = retry_with_exponential_backoff(
+            client.invoke, [("system", system_prompt), ("human", human_prompt)]
+        )
         return response.content
     except Exception:
         return f"Error while calling llm {MODEL}: \n{traceback.format_exc()}\n"
@@ -330,8 +321,8 @@ def run_agent_function(
 
     return patch, run_content
 
-
 if __name__ == "__main__":
+    load_dotenv()
     parser = argparse.ArgumentParser(
         description="Run benchmark on the agent.",
     )

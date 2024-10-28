@@ -78,3 +78,5 @@ We welcome contributions from the community! Please see our [CONTRIBUTING.md](ht
 - [Langgraph](https://github.com/langchain-ai/langgraph) for the agentic platform.
 - [SWE Bench](https://github.com/ComposioHQ/swe-bench) for providing the benchmark and dataset.
 For more information about SWEKit and our various agents, please contact us at `tech@composio.dev` or visit our [project page](https://github.com/ComposioHQ/swe-agent).
+
+On my machine a timeout of 60 in swekit/.../workspace.py line 182 was too little so I made it 300

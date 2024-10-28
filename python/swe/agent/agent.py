@@ -3,9 +3,10 @@
 import operator
 import typing as t
 from typing import Annotated, Literal, Sequence, TypedDict
+from IPython.display import Image, display
 
 import dotenv
-from langchain_aws import BedrockChat
+from langchain_aws import ChatBedrock
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langgraph.graph import END, START, StateGraph
@@ -32,22 +33,22 @@ def pop_thought_from_request(request: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
     request.pop("thought", None)
     return request
 
-
+MODEL = "us.meta.llama3-2-1b-instruct-v1:0"
+# MODEL = "anthropic.claude-3-5-sonnet-20240620-v1:0"
 def get_agent_graph(repo_name: str, workspace_id: str):
     import random
     import string
 
     random_string = "".join(random.choices(string.digits, k=6))
     run_file = f"messages_{random_string}.txt"
-
-    bedrock_client = BedrockChat(
+    
+    bedrock_client = ChatBedrock(
         credentials_profile_name="default",
-        model_id="anthropic.claude-3-5-sonnet-20240620-v1:0",
+        model_id=MODEL,
         region_name="us-west-2",
         model_kwargs={"temperature": 0, "max_tokens": 8192},
     )
-
-    composio_toolset = ComposioToolSet(
+    bedrock_client.composio_toolset = ComposioToolSet(
         workspace_config=WorkspaceType.Docker(),
         metadata={
             App.CODE_ANALYSIS_TOOL: {
@@ -324,6 +325,6 @@ def get_agent_graph(repo_name: str, workspace_id: str):
             "code_edit_tool": "code_edit_tool",
         },
     )
-
     graph = workflow.compile()
+    display(Image(graph.get_graph().draw_mermaid_png()))
     return graph, composio_toolset, run_file
